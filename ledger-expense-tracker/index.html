@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ledger — Expense Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12172B;
+    --surface: #1A2038;
+    --surface-2: #2A3149;
+    --text: #F5F3EE;
+    --text-dim: #A9AFC6;
+    --positive: #7FA98D;
+    --negative: #C1613D;
+    --border: #333B58;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, .balance { font-family: 'Fraunces', serif; }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  header {
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 32px;
+  }
+  .eyebrow {
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: 0.02em;
+    margin: 0 0 8px;
+  }
+  .balance {
+    font-size: clamp(40px, 8vw, 64px);
+    font-weight: 500;
+    margin: 0;
+    line-height: 1;
+  }
+  .balance.negative { color: var(--negative); }
+  .balance.positive { color: var(--positive); }
+  .balance-sub {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 40px;
+  }
+  @media (max-width: 720px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  section h2 {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0 0 16px;
+    color: var(--text);
+  }
+
+  /* add transaction */
+  form.add-row {
+    display: grid;
+    grid-template-columns: 1fr 110px 130px auto;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 560px) {
+    form.add-row { grid-template-columns: 1fr 1fr; }
+  }
+  form.add-row input, form.add-row select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    width: 100%;
+  }
+  form.add-row input:focus, form.add-row select:focus, form.add-row button:focus {
+    outline: 2px solid var(--positive);
+    outline-offset: 1px;
+  }
+  form.add-row button {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  form.add-row button:hover { opacity: 0.9; }
+
+  .txn-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--border);
+  }
+  .txn {
+    display: grid;
+    grid-template-columns: 1fr auto auto 28px;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .txn-main { min-width: 0; }
+  .txn-name {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .txn-meta {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .txn-amount {
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .txn-amount.negative { color: var(--negative); }
+  .txn-amount.positive { color: var(--positive); }
+  .txn-del {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 4px;
+  }
+  .txn-del:hover { color: var(--negative); }
+  .txn-del:focus { outline: 2px solid var(--positive); outline-offset: 1px; }
+
+  .empty {
+    color: var(--text-dim);
+    font-size: 14px;
+    padding: 24px 0;
+  }
+
+  /* category breakdown */
+  .cat-row { margin-bottom: 14px; }
+  .cat-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .cat-label .amt { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .cat-bar-bg {
+    background: var(--surface-2);
+    border-radius: 3px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .cat-bar-fill {
+    height: 100%;
+    background: var(--negative);
+    border-radius: 3px;
+  }
+
+  footer {
+    margin-top: 48px;
+    font-size: 12px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .txn { animation: fadein 0.2s ease; }
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(-2px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <p class="eyebrow">Ledger</p>
+      <p class="balance" id="balance">$0.00</p>
+      <p class="balance-sub" id="balanceSub">No transactions yet</p>
+    </header>
+
+    <div class="layout">
+      <section aria-labelledby="txnHeading">
+        <h2 id="txnHeading">Transactions</h2>
+        <form class="add-row" id="addForm">
+          <input type="text" id="name" placeholder="Description" required aria-label="Description">
+          <select id="type" aria-label="Type">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+          <input type="number" id="amount" placeholder="Amount" step="0.01" min="0" required aria-label="Amount">
+          <button type="submit">Add</button>
+        </form>
+        <ul class="txn-list" id="txnList"></ul>
+      </section>
+
+      <section aria-labelledby="catHeading">
+        <h2 id="catHeading">By category</h2>
+        <div id="catBreakdown"></div>
+      </section>
+    </div>
+
+    <footer>Data is stored only in this browser tab session.</footer>
+  </div>
+
+<script>
+(function () {
+  const CATEGORIES = ['Food', 'Transport', 'Housing', 'Entertainment', 'Health', 'Shopping', 'Other'];
+
+  /** @type {{id:number,name:string,type:'income'|'expense',amount:number,category:string,date:string}[]} */
+  let transactions = [];
+
+  const el = {
+    balance: document.getElementById('balance'),
+    balanceSub: document.getElementById('balanceSub'),
+    form: document.getElementById('addForm'),
+    name: document.getElementById('name'),
+    type: document.getElementById('type'),
+    amount: document.getElementById('amount'),
+    txnList: document.getElementById('txnList'),
+    catBreakdown: document.getElementById('catBreakdown'),
+  };
+
+  function guessCategory(name) {
+    const n = name.toLowerCase();
+    if (/coffee|restaurant|food|grocery|lunch|dinner/.test(n)) return 'Food';
+    if (/uber|gas|fuel|train|bus|transport/.test(n)) return 'Transport';
+    if (/rent|mortgage|electric|water|housing/.test(n)) return 'Housing';
+    if (/movie|netflix|game|entertainment/.test(n)) return 'Entertainment';
+    if (/doctor|pharmacy|health|gym/.test(n)) return 'Health';
+    if (/amazon|shopping|clothes|store/.test(n)) return 'Shopping';
+    return 'Other';
+  }
+
+  function formatCurrency(n) {
+    const sign = n < 0 ? '-' : '';
+    return sign + '$' + Math.abs(n).toFixed(2);
+  }
+
+  function render() {
+    const total = transactions.reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0);
+    el.balance.textContent = formatCurrency(total);
+    el.balance.className = 'balance ' + (total >= 0 ? 'positive' : 'negative');
+    el.balanceSub.textContent = transactions.length === 0
+      ? 'No transactions yet'
+      : transactions.length + ' transaction' + (transactions.length === 1 ? '' : 's') + ' recorded';
+
+    el.txnList.innerHTML = '';
+    if (transactions.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'Add your first transaction above to get started.';
+      el.txnList.appendChild(li);
+    } else {
+      [...transactions].sort((a, b) => b.id - a.id).forEach(t => {
+        const li = document.createElement('li');
+        li.className = 'txn';
+        const sign = t.type === 'income' ? '+' : '-';
+        li.innerHTML = `
+          <div class="txn-main">
+            <div class="txn-name">${escapeHtml(t.name)}</div>
+            <div class="txn-meta">${t.category} · ${t.date}</div>
+          </div>
+          <div class="txn-amount ${t.type === 'income' ? 'positive' : 'negative'}">${sign}${formatCurrency(t.amount).replace('-', '')}</div>
+          <div></div>
+          <button class="txn-del" data-id="${t.id}" aria-label="Delete ${escapeHtml(t.name)}">✕</button>
+        `;
+        el.txnList.appendChild(li);
+      });
+    }
+
+    renderCategories();
+  }
+
+  function renderCategories() {
+    const byCategory = {};
+    let maxVal = 0;
+    transactions.filter(t => t.type === 'expense').forEach(t => {
+      byCategory[t.category] = (byCategory[t.category] || 0) + t.amount;
+      maxVal = Math.max(maxVal, byCategory[t.category]);
+    });
+
+    el.catBreakdown.innerHTML = '';
+    const cats = Object.keys(byCategory);
+    if (cats.length === 0) {
+      const p = document.createElement('p');
+      p.className = 'empty';
+      p.textContent = 'No expenses yet.';
+      el.catBreakdown.appendChild(p);
+      return;
+    }
+    cats.sort((a, b) => byCategory[b] - byCategory[a]).forEach(cat => {
+      const val = byCategory[cat];
+      const pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
+      const row = document.createElement('div');
+      row.className = 'cat-row';
+      row.innerHTML = `
+        <div class="cat-label"><span>${cat}</span><span class="amt">${formatCurrency(val)}</span></div>
+        <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
+      `;
+      el.catBreakdown.appendChild(row);
+    });
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  el.form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = el.name.value.trim();
+    const amount = parseFloat(el.amount.value);
+    if (!name || isNaN(amount) || amount <= 0) return;
+
+    transactions.push({
+      id: Date.now(),
+      name,
+      type: el.type.value,
+      amount,
+      category: el.type.value === 'income' ? 'Income' : guessCategory(name),
+      date: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    });
+
+    el.name.value = '';
+    el.amount.value = '';
+    el.name.focus();
+    render();
+  });
+
+  el.txnList.addEventListener('click', (e) => {
+    const btn = e.target.closest('.txn-del');
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    transactions = transactions.filter(t => t.id !== id);
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
